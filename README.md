@@ -27,6 +27,8 @@ private transcript data.
 - Tools declare whether they have side effects and whether approval is required.
 - State transitions are explicit and illegal moves raise an error.
 - Event records are append-only and replayable.
+- Approval grants and tool calls are persisted as ordered events, so an approved task keeps its
+  authorization after restart.
 - The first slice does not execute arbitrary shell commands or contact a model provider.
 
 ## Status

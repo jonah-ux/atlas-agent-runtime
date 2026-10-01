@@ -73,6 +73,12 @@ class Task:
         self.events.append(event)
         return event
 
+    def event(self, kind: str, detail: str = "", tool: str | None = None) -> TaskEvent:
+        self.sequence += 1
+        event = TaskEvent(self.task_id, self.sequence, kind, self.state, detail, tool)
+        self.events.append(event)
+        return event
+
 
 class EventStore:
     """Append-only JSONL store; incomplete tasks can be reconstructed after restart."""
@@ -110,6 +116,8 @@ class Runtime:
             task.state = event.state
             task.sequence = event.sequence
             task.events.append(event)
+            if event.kind == "approval_granted" and event.tool:
+                task.approved_tools.add(event.tool)
 
     def submit(self, request: str, task_id: str | None = None) -> Task:
         task = Task(task_id or f"task-{uuid.uuid4().hex[:12]}", request)
@@ -133,7 +141,7 @@ class Runtime:
             if task.state is not TaskState.WAITING_FOR_APPROVAL:
                 self.move(task_id, TaskState.WAITING_FOR_APPROVAL, f"approval required for tool {name}")
             raise PermissionError(f"approval required for tool: {name}")
-        self.store.append(TaskEvent(task_id, task.sequence + 1, "tool_called", task.state, tool=name))
+        self.store.append(task.event("tool_called", tool=name))
         return handler()
 
     def approve(self, task_id: str, tool: str) -> TaskEvent:
@@ -141,5 +149,7 @@ class Runtime:
         if task.state is not TaskState.WAITING_FOR_APPROVAL:
             raise TransitionError("task is not waiting for approval")
         task.approved_tools.add(tool)
-        return self.move(task_id, TaskState.RUNNING, f"approved tool {tool}")
-
+        event = task.event("approval_granted", f"approved tool {tool}", tool=tool)
+        self.store.append(event)
+        self.move(task_id, TaskState.RUNNING, f"approved tool {tool}")
+        return event

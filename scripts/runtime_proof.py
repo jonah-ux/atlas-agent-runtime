@@ -17,6 +17,8 @@ with TemporaryDirectory() as directory:
     assert runtime.tasks["proof-task"].state is TaskState.WAITING_FOR_APPROVAL
     runtime.approve("proof-task", "publish")
     assert runtime.call_tool("proof-task", "publish", lambda: "published") == "published"
+    runtime = Runtime(EventStore(path), [ToolSpec("publish", side_effect=True, requires_approval=True)])
+    assert "publish" in runtime.tasks["proof-task"].approved_tools
     runtime.move("proof-task", TaskState.COMPLETED, "published")
     assert runtime.tasks["proof-task"].state is TaskState.COMPLETED
 
