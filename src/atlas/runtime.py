@@ -129,6 +129,20 @@ class Runtime:
     def recover(self) -> None:
         for event in self.store.read():
             task = self.tasks.setdefault(event.task_id, Task(event.task_id, request="recovered"))
+            if event.kind == "state_changed":
+                if event.state not in _ALLOWED[task.state]:
+                    raise EventStoreIntegrityError(
+                        f"invalid recovered transition for {event.task_id}: "
+                        f"{task.state.value} -> {event.state.value}"
+                    )
+            elif event.kind == "approval_granted":
+                if task.state is not TaskState.WAITING_FOR_APPROVAL or not event.tool:
+                    raise EventStoreIntegrityError(f"invalid recovered approval for {event.task_id}")
+            elif event.kind == "tool_called":
+                if task.state is not TaskState.RUNNING or not event.tool:
+                    raise EventStoreIntegrityError(f"invalid recovered tool call for {event.task_id}")
+            else:
+                raise EventStoreIntegrityError(f"unknown recovered event kind: {event.kind}")
             task.state = event.state
             task.sequence = event.sequence
             task.events.append(event)

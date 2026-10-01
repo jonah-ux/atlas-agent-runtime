@@ -99,3 +99,19 @@ def test_recovery_rejects_corrupt_event_sequence(tmp_path: Path):
         assert "non-contiguous sequence" in str(exc)
     else:
         raise AssertionError("corrupt event sequence was silently recovered")
+
+
+def test_recovery_rejects_impossible_state_transition(tmp_path: Path):
+    event_path = tmp_path / "events.jsonl"
+    runtime = Runtime(EventStore(event_path))
+    task = runtime.submit("demo", "task-transition-corrupt")
+    runtime.move(task.task_id, TaskState.RUNNING)
+    rows = event_path.read_text(encoding="utf-8").splitlines()
+    rows[0] = rows[0].replace('"state": "running"', '"state": "completed"')
+    event_path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    try:
+        Runtime(EventStore(event_path))
+    except EventStoreIntegrityError as exc:
+        assert "invalid recovered transition" in str(exc)
+    else:
+        raise AssertionError("impossible recovered transition was accepted")
