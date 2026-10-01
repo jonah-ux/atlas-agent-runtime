@@ -115,3 +115,12 @@ def test_recovery_rejects_impossible_state_transition(tmp_path: Path):
         assert "invalid recovered transition" in str(exc)
     else:
         raise AssertionError("impossible recovered transition was accepted")
+
+
+def test_event_append_is_immediately_recoverable(tmp_path: Path):
+    event_path = tmp_path / "events.jsonl"
+    runtime = Runtime(EventStore(event_path))
+    task = runtime.submit("demo", "task-durable")
+    runtime.move(task.task_id, TaskState.RUNNING)
+    recovered = Runtime(EventStore(event_path))
+    assert recovered.tasks[task.task_id].state is TaskState.RUNNING

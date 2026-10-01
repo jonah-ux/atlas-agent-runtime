@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 import json
 import hashlib
+import os
 from pathlib import Path
 from typing import Any, Callable
 import uuid
@@ -95,6 +96,8 @@ class EventStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(event.as_dict(), sort_keys=True) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
 
     def read(self) -> list[TaskEvent]:
         if not self.path.exists():
