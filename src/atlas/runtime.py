@@ -149,6 +149,11 @@ class Runtime:
         task = self.tasks[task_id]
         if task.state is not TaskState.WAITING_FOR_APPROVAL:
             raise TransitionError("task is not waiting for approval")
+        spec = self.tools.get(tool)
+        if spec is None:
+            raise KeyError(f"unknown tool: {tool}")
+        if not spec.requires_approval:
+            raise PermissionError(f"tool does not require approval: {tool}")
         task.approved_tools.add(tool)
         event = task.event("approval_granted", f"approved tool {tool}", tool=tool)
         self.store.append(event)

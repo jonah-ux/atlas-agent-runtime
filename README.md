@@ -34,6 +34,8 @@ signature or a claim that the task was deployed.
 - Event records are append-only and replayable.
 - Approval grants and tool calls are persisted as ordered events, so an approved task keeps its
   authorization after restart.
+- Approval is task-scoped and only admits registered tools that explicitly require approval;
+  unknown or non-gated tool names are rejected.
 - The first slice does not execute arbitrary shell commands or contact a model provider.
 
 ## Status

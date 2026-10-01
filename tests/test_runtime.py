@@ -58,3 +58,24 @@ def test_receipt_is_deterministic_and_content_addressed(tmp_path: Path):
     assert first == second
     assert first["schema"] == "atlas-receipt/v1"
     assert len(first["receipt_sha256"]) == 64
+
+
+def test_approval_cannot_admit_unknown_or_non_gated_tools(tmp_path: Path):
+    runtime = Runtime(
+        EventStore(tmp_path / "events.jsonl"),
+        [ToolSpec("publish", side_effect=True, requires_approval=True), ToolSpec("inspect")],
+    )
+    task = runtime.submit("publish", "task-5")
+    runtime.move(task.task_id, TaskState.RUNNING)
+    try:
+        runtime.call_tool(task.task_id, "publish", lambda: "never")
+    except PermissionError:
+        pass
+    for tool, expected in (("missing", KeyError), ("inspect", PermissionError)):
+        try:
+            runtime.approve(task.task_id, tool)
+        except expected:
+            pass
+        else:
+            raise AssertionError(f"approval admitted {tool}")
+    assert task.approved_tools == set()
