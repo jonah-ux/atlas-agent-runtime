@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 import json
+import hashlib
 from pathlib import Path
 from typing import Any, Callable
 import uuid
@@ -153,3 +154,19 @@ class Runtime:
         self.store.append(event)
         self.move(task_id, TaskState.RUNNING, f"approved tool {tool}")
         return event
+
+    def receipt(self, task_id: str) -> dict[str, Any]:
+        """Return a deterministic, content-addressed lifecycle receipt."""
+
+        task = self.tasks[task_id]
+        events = [event.as_dict() for event in task.events]
+        payload = {
+            "schema": "atlas-receipt/v1",
+            "task_id": task.task_id,
+            "state": task.state.value,
+            "event_count": len(events),
+            "events": events,
+        }
+        canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        payload["receipt_sha256"] = hashlib.sha256(canonical).hexdigest()
+        return payload

@@ -15,11 +15,16 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
 atlas demo --state ./artifacts/demo-events.jsonl
+atlas receipt demo-task --state ./artifacts/demo-events.jsonl
 ```
 
 The demo starts a task, pauses before a side effect, reconstructs it from the event store, records
 approval, and completes it. Output is JSON and the state file contains no model credentials or
 private transcript data.
+
+`receipt` reconstructs the task from the event store and emits an `atlas-receipt/v1` document with
+ordered events and a SHA-256 content fingerprint. The fingerprint is an integrity aid, not a
+signature or a claim that the task was deployed.
 
 ## Design boundaries
 

@@ -47,3 +47,14 @@ def test_tool_and_approval_events_have_monotonic_sequences(tmp_path: Path):
     recovered = Runtime(EventStore(event_path), [ToolSpec("publish", side_effect=True, requires_approval=True)])
     assert "publish" in recovered.tasks["task-3"].approved_tools
     assert recovered.tasks["task-3"].sequence == task.sequence
+
+
+def test_receipt_is_deterministic_and_content_addressed(tmp_path: Path):
+    runtime = Runtime(EventStore(tmp_path / "events.jsonl"))
+    task = runtime.submit("demo", "task-4")
+    runtime.move(task.task_id, TaskState.RUNNING, "started")
+    first = runtime.receipt(task.task_id)
+    second = runtime.receipt(task.task_id)
+    assert first == second
+    assert first["schema"] == "atlas-receipt/v1"
+    assert len(first["receipt_sha256"]) == 64

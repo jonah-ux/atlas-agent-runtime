@@ -21,5 +21,7 @@ with TemporaryDirectory() as directory:
     assert "publish" in runtime.tasks["proof-task"].approved_tools
     runtime.move("proof-task", TaskState.COMPLETED, "published")
     assert runtime.tasks["proof-task"].state is TaskState.COMPLETED
+    receipt = runtime.receipt("proof-task")
+    assert receipt["schema"] == "atlas-receipt/v1" and len(receipt["receipt_sha256"]) == 64
 
 print("atlas approval/recovery proof: PASS")
