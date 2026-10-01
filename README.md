@@ -42,7 +42,7 @@ signature or a claim that the task was deployed.
 
 ## Status
 
-Version 0.1.0 is a runtime foundation. Provider adapters, distributed workers, richer receipts,
+Version 0.1.1 is a runtime foundation. Provider adapters, distributed workers, richer receipts,
 and a dashboard are future slices and are not represented as implemented here.
 
 ## Provenance and security
