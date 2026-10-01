@@ -24,6 +24,10 @@ class TransitionError(ValueError):
     """Raised when a task attempts an illegal lifecycle transition."""
 
 
+class EventStoreIntegrityError(ValueError):
+    """Raised when persisted lifecycle evidence cannot be replayed safely."""
+
+
 _ALLOWED: dict[TaskState, set[TaskState]] = {
     TaskState.QUEUED: {TaskState.RUNNING, TaskState.CANCELLED},
     TaskState.RUNNING: {TaskState.WAITING_FOR_APPROVAL, TaskState.COMPLETED, TaskState.FAILED, TaskState.CANCELLED},
@@ -96,11 +100,22 @@ class EventStore:
         if not self.path.exists():
             return []
         events: list[TaskEvent] = []
-        for line in self.path.read_text(encoding="utf-8").splitlines():
+        expected_sequences: dict[str, int] = {}
+        for line_number, line in enumerate(self.path.read_text(encoding="utf-8").splitlines(), start=1):
             if not line.strip():
                 continue
-            row = json.loads(line)
-            events.append(TaskEvent(**{**row, "state": TaskState(row["state"])}))
+            try:
+                row = json.loads(line)
+                event = TaskEvent(**{**row, "state": TaskState(row["state"])})
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+                raise EventStoreIntegrityError(f"invalid event at line {line_number}") from exc
+            expected = expected_sequences.get(event.task_id, 0) + 1
+            if event.sequence != expected:
+                raise EventStoreIntegrityError(
+                    f"non-contiguous sequence for {event.task_id}: expected {expected}, got {event.sequence}"
+                )
+            expected_sequences[event.task_id] = event.sequence
+            events.append(event)
         return events
 
 

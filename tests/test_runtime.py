@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from atlas.runtime import EventStore, Runtime, TaskState, ToolSpec, TransitionError
+from atlas.runtime import EventStore, EventStoreIntegrityError, Runtime, TaskState, ToolSpec, TransitionError
 
 
 def test_illegal_transition_is_refused(tmp_path: Path):
@@ -79,3 +79,23 @@ def test_approval_cannot_admit_unknown_or_non_gated_tools(tmp_path: Path):
         else:
             raise AssertionError(f"approval admitted {tool}")
     assert task.approved_tools == set()
+
+
+def test_recovery_rejects_corrupt_event_sequence(tmp_path: Path):
+    event_path = tmp_path / "events.jsonl"
+    runtime = Runtime(EventStore(event_path), [ToolSpec("publish", requires_approval=True)])
+    task = runtime.submit("demo", "task-corrupt")
+    runtime.move(task.task_id, TaskState.RUNNING)
+    try:
+        runtime.call_tool(task.task_id, "publish", lambda: "never")
+    except PermissionError:
+        pass
+    rows = event_path.read_text(encoding="utf-8").splitlines()
+    rows[1] = rows[1].replace('"sequence": 2', '"sequence": 4')
+    event_path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    try:
+        Runtime(EventStore(event_path))
+    except EventStoreIntegrityError as exc:
+        assert "non-contiguous sequence" in str(exc)
+    else:
+        raise AssertionError("corrupt event sequence was silently recovered")
