@@ -1,0 +1,76 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Annotated tag to publish"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Refresh annotated release tag
+        run: git fetch --force origin "refs/tags/${{ inputs.release_tag || github.ref_name }}:refs/tags/${{ inputs.release_tag || github.ref_name }}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate release identity
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: |
+          python - <<'PY'
+          import os, re, subprocess, tomllib
+          tag = os.environ["RELEASE_TAG"]
+          if not re.fullmatch(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag):
+              raise SystemExit("release tag must be vMAJOR.MINOR.PATCH")
+          with open("pyproject.toml", "rb") as handle:
+              version = tomllib.load(handle)["project"]["version"]
+          if tag != f"v{version}":
+              raise SystemExit(f"tag {tag} does not match project version {version}")
+          if subprocess.check_output(["git", "cat-file", "-t", f"refs/tags/{tag}"], text=True).strip() != "tag":
+              raise SystemExit("release tag must be annotated")
+          tag_commit = subprocess.check_output(["git", "rev-parse", f"refs/tags/{tag}^{{}}"], text=True).strip()
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          if tag_commit != head:
+              raise SystemExit("release tag does not identify checked-out HEAD")
+          print(f"Release identity verified: {tag} -> {head}")
+          PY
+      - name: Build distributions and checksums
+        run: |
+          python -m pip install --upgrade build
+          python -m build --sdist --wheel
+          (cd dist && sha256sum *.whl *.tar.gz > SHA256SUMS)
+      - name: Verify wheel consumer
+        run: |
+          python -m venv .release-wheel
+          .release-wheel/bin/python -m pip install dist/*.whl
+          .release-wheel/bin/atlas --version
+          .release-wheel/bin/atlas --help
+      - name: Verify source consumer
+        run: |
+          python -m venv .release-sdist
+          .release-sdist/bin/python -m pip install dist/*.tar.gz
+          .release-sdist/bin/atlas --version
+          .release-sdist/bin/atlas --help
+      - name: Publish prerelease assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ inputs.release_tag || github.ref_name }}" dist/* \
+            --repo "${{ github.repository }}" \
+            --verify-tag \
+            --title "${{ github.repository }} ${{ inputs.release_tag || github.ref_name }}" \
+            --generate-notes \
+            --prerelease
