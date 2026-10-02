@@ -16,6 +16,10 @@ source .venv/bin/activate
 python -m pip install -e .
 atlas demo --state ./artifacts/demo-events.jsonl
 atlas receipt demo-task --state ./artifacts/demo-events.jsonl
+atlas evidence demo-task --state ./artifacts/demo-events.jsonl --id fixture-task:001 \
+  --created-at 2026-01-01T00:00:00Z --subject "Synthetic approval" \
+  --summary "A bounded approval fixture" --fixture portfolio-suite-v2 \
+  --out ./artifacts/demo-evidence.json
 ```
 
 The demo starts a task, pauses before a side effect, reconstructs it from the event store, records
@@ -25,6 +29,10 @@ private transcript data.
 `receipt` reconstructs the task from the event store and emits an `atlas-receipt/v1` document with
 ordered events and a SHA-256 content fingerprint. The fingerprint is an integrity aid, not a
 signature or a claim that the task was deployed.
+
+`evidence` validates that receipt and projects bounded metadata and opaque hashes into
+`ai-work-evidence/v1`. It does not copy request text, event details, tool rows, paths, or
+credentials; completed local lifecycles are reported as `observed`, not deployed or verified.
 
 ## Design boundaries
 
