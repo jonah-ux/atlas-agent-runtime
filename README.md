@@ -98,7 +98,8 @@ local lifecycle is reported as `observed`, not deployed or verified.
 
 - Provider-neutral core with no model SDK dependency.
 - Explicit task states; illegal transitions raise an error.
-- Append-only JSONL events, flushed and synchronized before append returns.
+- Append-only JSONL events, flushed and synchronized before append returns; a failed append is
+  rolled back before the in-memory task advances.
 - Restart reconstruction with fail-closed checks for malformed JSON, gaps, and impossible states.
 - Task-scoped approval for registered tools that explicitly require it.
 - Deterministic `atlas-receipt/v1` output with a SHA-256 content fingerprint.
