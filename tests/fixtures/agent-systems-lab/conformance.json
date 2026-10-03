@@ -1,0 +1,10 @@
+{
+  "schema": "agent-systems-lab-consumer-conformance/v1",
+  "owner_corpus": "forgeyard/conformance",
+  "cases": [
+    {"name": "completed-receipt", "status": "observed"},
+    {"name": "queued-receipt", "status": "unknown"},
+    {"name": "tampered-receipt", "status": "rejected"},
+    {"name": "unknown-schema", "status": "rejected"}
+  ]
+}
