@@ -15,5 +15,8 @@ encoding, and a trailing newline. Its artifact hash is distinct from the existin
 
 Atlas's consumer conformance fixture is under
 [`tests/fixtures/agent-systems-lab/conformance.json`](../../tests/fixtures/agent-systems-lab/conformance.json).
-It mirrors the Forgeyard-owned corpus classifications for completed, queued, tampered, and
-unknown-version receipts without importing Forgeyard at runtime.
+It mirrors the Forgeyard-owned corpus at the pinned owner revision under
+[`tests/fixtures/agent-systems-lab/forgeyard-conformance`](../../tests/fixtures/agent-systems-lab/forgeyard-conformance/).
+Atlas tests the receipt and projection behavior it owns; the copied evidence documents remain
+fixtures for the Forgeyard validator and are not parsed by Atlas at runtime. Updating the owner
+revision requires refreshing that directory and rerunning the conformance tests.

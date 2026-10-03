@@ -1,6 +1,8 @@
 {
   "schema": "agent-systems-lab-consumer-conformance/v1",
   "owner_corpus": "forgeyard/conformance",
+  "owner_manifest": "forgeyard-conformance/manifest.json",
+  "owner_revision": "157ccbabc4c622848de2a1c0547bbc6ad5863a69",
   "cases": [
     {"name": "completed-receipt", "status": "observed"},
     {"name": "queued-receipt", "status": "unknown"},

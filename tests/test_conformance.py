@@ -7,6 +7,9 @@ from atlas.interop import project_receipt, validate_receipt
 from atlas.runtime import EventStore, Runtime, TaskState, ToolSpec
 
 
+FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "agent-systems-lab"
+
+
 def completed_receipt(root: Path):
     runtime = Runtime(EventStore(root / "events.jsonl"), [ToolSpec("publish", requires_approval=True)])
     task = runtime.submit("synthetic request", "fixture-task")
@@ -21,14 +24,44 @@ def completed_receipt(root: Path):
     return runtime.receipt(task.task_id)
 
 
+def failed_receipt(root: Path):
+    runtime = Runtime(EventStore(root / "failed.jsonl"))
+    task = runtime.submit("synthetic request", "failed-task")
+    runtime.move(task.task_id, TaskState.RUNNING, "start")
+    runtime.move(task.task_id, TaskState.FAILED, "fixture failure")
+    return runtime.receipt(task.task_id)
+
+
 class ConsumerConformanceTest(unittest.TestCase):
     def test_corpus_manifest_names_the_forgeyard_owner(self):
-        path = Path(__file__).parent / "fixtures" / "agent-systems-lab" / "conformance.json"
+        path = FIXTURE_ROOT / "conformance.json"
         manifest = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual(manifest["owner_corpus"], "forgeyard/conformance")
         self.assertEqual(manifest["schema"], "agent-systems-lab-consumer-conformance/v1")
+        self.assertEqual(manifest["owner_manifest"], "forgeyard-conformance/manifest.json")
+        self.assertRegex(manifest["owner_revision"], r"^[0-9a-f]{40}$")
 
-    def test_completed_and_queued_receipts_match_corpus(self):
+    def test_forgeyard_owner_corpus_is_mirrored(self):
+        root = FIXTURE_ROOT / "forgeyard-conformance"
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["schema"], "forgeyard-conformance-manifest/v1")
+        self.assertEqual(manifest["contract"], "ai-work-evidence/v1")
+        self.assertEqual(
+            [case["name"] for case in manifest["cases"]],
+            [
+                "valid-observed",
+                "status-unknown",
+                "status-failed",
+                "unknown-version",
+                "unsafe-artifact",
+                "bad-hash",
+                "malformed",
+            ],
+        )
+        for case in manifest["cases"]:
+            self.assertTrue((root / case["file"]).is_file(), case["file"])
+
+    def test_completed_queued_and_failed_receipts_match_corpus(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             completed = completed_receipt(root)
@@ -36,8 +69,10 @@ class ConsumerConformanceTest(unittest.TestCase):
             queued_runtime = Runtime(EventStore(root / "queued.jsonl"))
             queued = queued_runtime.submit("synthetic request", "queued-task")
             unknown = project_receipt(queued_runtime.receipt(queued.task_id), evidence_id="fixture:queued", created_at="2026-01-01T00:00:00Z", subject="Synthetic", summary="Fixture", fixture="agent-systems-lab")
+            failed = project_receipt(failed_receipt(root), evidence_id="fixture:failed", created_at="2026-01-01T00:00:00Z", subject="Synthetic", summary="Fixture", fixture="agent-systems-lab")
         self.assertEqual(observed["status"], "observed")
         self.assertEqual(unknown["status"], "unknown")
+        self.assertEqual(failed["status"], "failed")
 
     def test_tampered_receipt_and_unknown_schema_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
