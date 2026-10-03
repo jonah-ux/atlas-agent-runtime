@@ -25,7 +25,7 @@ From a fresh clone, run this copy-paste block:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install -e .
+.venv/bin/python3 -m pip install -e .
 .venv/bin/atlas demo --state ./artifacts/demo-events.jsonl
 .venv/bin/atlas receipt demo-task --state ./artifacts/demo-events.jsonl
 ```
@@ -55,15 +55,15 @@ does not erase the approval trail.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e .
+python3 -m pip install -e .
 ```
 
 ### Build and install a wheel
 
 ```bash
-python -m pip install build
-python -m build --wheel
-python -m pip install dist/atlas_agent_runtime-*.whl
+python3 -m pip install build
+python3 -m build --wheel
+python3 -m pip install dist/atlas_agent_runtime-*.whl
 ```
 
 The package has no runtime dependencies. The CI workflow exercises the editable install, test
@@ -126,8 +126,8 @@ docs, and run the dependency-free proof before opening a pull request. See
 The checked-in `atlas-public-audit/v1` receipt makes the public release surface inspectable:
 
 ```console
-python scripts/audit_public_surface.py --json
-python scripts/audit_public_surface.py --dist-dir ./dist --json
+python3 scripts/audit_public_surface.py --json
+python3 scripts/audit_public_surface.py --dist-dir ./dist --json
 ```
 
 It inventories declared build/runtime dependencies, checks the MIT license and annotated-tag

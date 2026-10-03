@@ -7,7 +7,7 @@ standard library at runtime. The event file and evidence file are synthetic loca
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install -e .
+.venv/bin/python3 -m pip install -e .
 ```
 
 Atlas has no runtime dependencies. An editable install makes the `atlas` command available from

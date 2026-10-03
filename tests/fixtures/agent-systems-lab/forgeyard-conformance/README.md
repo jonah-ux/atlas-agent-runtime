@@ -6,5 +6,5 @@ provider data.
 
 Atlas keeps this copy so its consumer conformance surface names the complete owner corpus. Atlas
 does not run the Forgeyard validator or reinterpret these documents at runtime; run
-`python scripts/run_interop_conformance.py --json` from a Forgeyard checkout to execute the owner
+`python3 scripts/run_interop_conformance.py --json` from a Forgeyard checkout to execute the owner
 validation report.
