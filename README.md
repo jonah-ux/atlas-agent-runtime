@@ -120,3 +120,19 @@ richer receipts, and a dashboard are future slices and are not represented as im
 Prefer small contract-first changes. Add a boundary test, update the architecture and limitations
 docs, and run the dependency-free proof before opening a pull request. See
 [CONTRIBUTING.md](CONTRIBUTING.md), [PROVENANCE.md](PROVENANCE.md), and [SECURITY.md](SECURITY.md).
+
+### Public release audit
+
+The checked-in `atlas-public-audit/v1` receipt makes the public release surface inspectable:
+
+```console
+python scripts/audit_public_surface.py --json
+python scripts/audit_public_surface.py --dist-dir ./dist --json
+```
+
+It inventories declared build/runtime dependencies, checks the MIT license and annotated-tag
+release markers, scans tracked text files for a small set of high-signal credential patterns, and
+optionally compares wheel/source-archive bytes with `SHA256SUMS`. Without a distribution directory,
+artifact state is reported as `unavailable`. A passing audit is a release aid; it does not claim a
+complete DLP system, security certification, reproducible builds across machines, deployment,
+adoption, or production readiness.
