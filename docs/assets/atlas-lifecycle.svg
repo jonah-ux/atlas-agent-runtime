@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
+  <title id="title">Atlas task lifecycle</title>
+  <desc id="desc">A durable task moves from ask to pause, approval, resume, and a content addressed receipt.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0b1020"/>
+      <stop offset="1" stop-color="#141b32"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" x2="1">
+      <stop offset="0" stop-color="#6ee7f9"/>
+      <stop offset="1" stop-color="#ffb86b"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="300" rx="28" fill="url(#bg)"/>
+  <path d="M120 154H1078" stroke="#273354" stroke-width="8" stroke-linecap="round"/>
+  <path d="M120 154H1078" stroke="url(#line)" stroke-width="3" stroke-linecap="round" stroke-dasharray="10 16" filter="url(#glow)"/>
+  <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">
+    <text x="70" y="52" fill="#f8fafc" font-size="24" font-weight="700" letter-spacing="2">ATLAS / DURABLE TASK RUNWAY</text>
+    <text x="70" y="82" fill="#93a4c8" font-size="15">The side effect waits. The evidence stays.</text>
+    <g text-anchor="middle">
+      <g transform="translate(130 154)">
+        <circle r="38" fill="#17243e" stroke="#6ee7f9" stroke-width="3"/>
+        <text y="7" fill="#f8fafc" font-size="19" font-weight="700">01</text>
+        <text y="76" fill="#f8fafc" font-size="16" font-weight="700">ASK</text>
+        <text y="101" fill="#93a4c8" font-size="13">submit task</text>
+      </g>
+      <g transform="translate(365 154)">
+        <circle r="38" fill="#17243e" stroke="#6ee7f9" stroke-width="3"/>
+        <text y="7" fill="#f8fafc" font-size="19" font-weight="700">02</text>
+        <text y="76" fill="#f8fafc" font-size="16" font-weight="700">PAUSE</text>
+        <text y="101" fill="#93a4c8" font-size="13">side effect noticed</text>
+      </g>
+      <g transform="translate(600 154)">
+        <circle r="38" fill="#2b2130" stroke="#ffb86b" stroke-width="3"/>
+        <text y="7" fill="#fff7ed" font-size="19" font-weight="700">03</text>
+        <text y="76" fill="#fff7ed" font-size="16" font-weight="700">APPROVE</text>
+        <text y="101" fill="#d7b99a" font-size="13">named tool only</text>
+      </g>
+      <g transform="translate(835 154)">
+        <circle r="38" fill="#17243e" stroke="#6ee7f9" stroke-width="3"/>
+        <text y="7" fill="#f8fafc" font-size="19" font-weight="700">04</text>
+        <text y="76" fill="#f8fafc" font-size="16" font-weight="700">RESUME</text>
+        <text y="101" fill="#93a4c8" font-size="13">persist + replay</text>
+      </g>
+      <g transform="translate(1070 154)">
+        <circle r="38" fill="#17352f" stroke="#8af0c0" stroke-width="3"/>
+        <text y="7" fill="#ecfdf5" font-size="19" font-weight="700">05</text>
+        <text y="76" fill="#ecfdf5" font-size="16" font-weight="700">RECEIPT</text>
+        <text y="101" fill="#a7d7c4" font-size="13">hash the trail</text>
+      </g>
+    </g>
+  </g>
+</svg>
