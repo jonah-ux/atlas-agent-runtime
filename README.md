@@ -17,6 +17,10 @@ add a dependency on another portfolio project, private service, or model provide
 
 ## 60-second flight
 
+Explore the self-contained [flight deck](docs/flight-deck.html) to step through the six-event
+approval lifecycle. Its browser controls illustrate the states; the CLI below produces the
+actual persisted event log and receipt. No model or companion tool is needed for either route.
+
 From a fresh clone, run this copy-paste block:
 
 ```bash
