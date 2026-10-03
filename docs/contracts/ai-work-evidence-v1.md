@@ -12,3 +12,8 @@ provider call, deployment, or user-visible outcome.
 The `atlas-receipt` artifact is the canonical full receipt JSON with sorted keys, compact UTF-8
 encoding, and a trailing newline. Its artifact hash is distinct from the existing
 `receipt_sha256`, which remains a provenance value for the receipt core.
+
+Atlas's consumer conformance fixture is under
+[`tests/fixtures/agent-systems-lab/conformance.json`](../../tests/fixtures/agent-systems-lab/conformance.json).
+It mirrors the Forgeyard-owned corpus classifications for completed, queued, tampered, and
+unknown-version receipts without importing Forgeyard at runtime.
