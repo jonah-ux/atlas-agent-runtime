@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0 — shared work evidence projection
+
+- Add `atlas evidence` and strict `ai-work-evidence/v1` receipt projection.
+- Preserve local lifecycle integrity while keeping request text and event details out of shared records.
+
 ## 0.1.1 — durable recovery contracts
 
 - Persist lifecycle events with flush and `fsync` before append returns.
