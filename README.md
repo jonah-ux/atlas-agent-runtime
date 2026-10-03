@@ -133,6 +133,7 @@ python scripts/audit_public_surface.py --dist-dir ./dist --json
 It inventories declared build/runtime dependencies, checks the MIT license and annotated-tag
 release markers, scans tracked text files for a small set of high-signal credential patterns, and
 optionally compares wheel/source-archive bytes with `SHA256SUMS`. Without a distribution directory,
-artifact state is reported as `unavailable`. A passing audit is a release aid; it does not claim a
+artifact state is reported as `unavailable`; pass `--require-dist` to make omission block a release
+review. Supplied malformed, extra, or symlinked artifacts block the receipt. A passing audit is a release aid; it does not claim a
 complete DLP system, security certification, reproducible builds across machines, deployment,
 adoption, or production readiness.
