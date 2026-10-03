@@ -89,6 +89,7 @@ flowchart LR
 | `task not found` | The state path or task id does not match. | Reuse `demo-task` and the same `--state` path. |
 | `refusing to overwrite an existing evidence file` | Atlas will not silently replace an artifact. | Choose a new `--out` path or remove the synthetic file yourself. |
 | `invalid event` / `non-contiguous sequence` | The event store failed an integrity check. | Preserve the file and inspect it; recovery fails closed by design. |
+| append or `fsync` failure | The event could not be synchronized. | The attempted JSONL suffix is rolled back and the task stays at its prior in-memory state; retry only after the storage error is understood. |
 
 ## Next stop
 

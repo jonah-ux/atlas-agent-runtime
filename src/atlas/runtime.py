@@ -70,19 +70,33 @@ class Task:
     events: list[TaskEvent] = field(default_factory=list)
     approved_tools: set[str] = field(default_factory=set)
 
-    def transition(self, state: TaskState, detail: str = "") -> TaskEvent:
+    def transition_event(self, state: TaskState, detail: str = "") -> TaskEvent:
+        """Build the next state event without changing task memory."""
+
         if state not in _ALLOWED[self.state]:
             raise TransitionError(f"cannot transition {self.state.value} -> {state.value}")
-        self.sequence += 1
-        self.state = state
-        event = TaskEvent(self.task_id, self.sequence, "state_changed", state, detail)
+        return TaskEvent(self.task_id, self.sequence + 1, "state_changed", state, detail)
+
+    def event_candidate(self, kind: str, detail: str = "", tool: str | None = None) -> TaskEvent:
+        """Build the next event without changing task memory."""
+
+        return TaskEvent(self.task_id, self.sequence + 1, kind, self.state, detail, tool)
+
+    def apply_event(self, event: TaskEvent) -> None:
+        """Apply an event after its durable append has completed."""
+
+        self.sequence = event.sequence
+        self.state = event.state
         self.events.append(event)
+
+    def transition(self, state: TaskState, detail: str = "") -> TaskEvent:
+        event = self.transition_event(state, detail)
+        self.apply_event(event)
         return event
 
     def event(self, kind: str, detail: str = "", tool: str | None = None) -> TaskEvent:
-        self.sequence += 1
-        event = TaskEvent(self.task_id, self.sequence, kind, self.state, detail, tool)
-        self.events.append(event)
+        event = self.event_candidate(kind, detail, tool)
+        self.apply_event(event)
         return event
 
 
@@ -94,10 +108,27 @@ class EventStore:
 
     def append(self, event: TaskEvent) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(event.as_dict(), sort_keys=True) + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
+        with self.path.open("a+", encoding="utf-8") as handle:
+            handle.seek(0, os.SEEK_END)
+            start_offset = handle.tell()
+            try:
+                handle.write(json.dumps(event.as_dict(), sort_keys=True) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            except Exception as exc:
+                # An fsync failure may happen after bytes reached the file. Remove
+                # this append before returning so a retry cannot create a duplicate
+                # sequence and a restart sees the same prefix as this runtime.
+                try:
+                    handle.seek(start_offset)
+                    handle.truncate()
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                except Exception as rollback_exc:
+                    raise EventStoreIntegrityError(
+                        "event append failed and rollback could not be synchronized"
+                    ) from rollback_exc
+                raise exc
 
     def read(self) -> list[TaskEvent]:
         if not self.path.exists():
@@ -161,8 +192,9 @@ class Runtime:
 
     def move(self, task_id: str, state: TaskState, detail: str = "") -> TaskEvent:
         task = self.tasks[task_id]
-        event = task.transition(state, detail)
+        event = task.transition_event(state, detail)
         self.store.append(event)
+        task.apply_event(event)
         return event
 
     def call_tool(self, task_id: str, name: str, handler: Callable[[], str]) -> str:
@@ -174,7 +206,9 @@ class Runtime:
             if task.state is not TaskState.WAITING_FOR_APPROVAL:
                 self.move(task_id, TaskState.WAITING_FOR_APPROVAL, f"approval required for tool {name}")
             raise PermissionError(f"approval required for tool: {name}")
-        self.store.append(task.event("tool_called", tool=name))
+        event = task.event_candidate("tool_called", tool=name)
+        self.store.append(event)
+        task.apply_event(event)
         return handler()
 
     def approve(self, task_id: str, tool: str) -> TaskEvent:
@@ -186,9 +220,10 @@ class Runtime:
             raise KeyError(f"unknown tool: {tool}")
         if not spec.requires_approval:
             raise PermissionError(f"tool does not require approval: {tool}")
-        task.approved_tools.add(tool)
-        event = task.event("approval_granted", f"approved tool {tool}", tool=tool)
+        event = task.event_candidate("approval_granted", f"approved tool {tool}", tool=tool)
         self.store.append(event)
+        task.apply_event(event)
+        task.approved_tools.add(tool)
         self.move(task_id, TaskState.RUNNING, f"approved tool {tool}")
         return event
 
