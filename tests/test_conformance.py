@@ -33,6 +33,21 @@ def failed_receipt(root: Path):
 
 
 class ConsumerConformanceTest(unittest.TestCase):
+    def test_owner_manifest_matches_producer_schema_boundaries(self):
+        path = Path(__file__).parents[1] / "conformance" / "agent-systems-lab.json"
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as directory:
+            receipt = completed_receipt(Path(directory))
+            evidence = project_receipt(
+                receipt, evidence_id="fixture:owner-manifest", created_at="2026-01-01T00:00:00Z",
+                subject="Synthetic", summary="Producer boundary", fixture="agent-systems-lab",
+            )
+        self.assertEqual(manifest["owner"], "atlas-agent-runtime")
+        self.assertCountEqual(manifest["native_schemas"], [receipt["schema"], evidence["schema"]])
+        for test_path in manifest["tests"]:
+            self.assertTrue((Path(__file__).parents[1] / test_path).is_file())
+        self.assertTrue((Path(__file__).parents[1] / manifest["consumer_manifest"]).is_file())
+
     def test_corpus_manifest_names_the_forgeyard_owner(self):
         path = FIXTURE_ROOT / "conformance.json"
         manifest = json.loads(path.read_text(encoding="utf-8"))
