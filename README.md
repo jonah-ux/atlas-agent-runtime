@@ -117,6 +117,12 @@ richer receipts, and a dashboard are future slices and are not represented as im
 
 ## Contributing and provenance
 
+The source-level [owner conformance manifest](conformance/agent-systems-lab.json) declares Atlas's
+native receipt/evidence schemas and capability names. The conformance test compares those schema
+declarations with real synthetic producer output. The manifest is included in new source archives;
+it is metadata for an explicit compatibility check, and does not install a sibling runtime or
+change an already published release.
+
 Prefer small contract-first changes. Add a boundary test, update the architecture and limitations
 docs, and run the dependency-free proof before opening a pull request. See
 [CONTRIBUTING.md](CONTRIBUTING.md), [PROVENANCE.md](PROVENANCE.md), and [SECURITY.md](SECURITY.md).
